@@ -20,3 +20,7 @@ product_env/
 # OS
 .DS_Store
 Thumbs.db
+
+
+#
+*.egg-info/
