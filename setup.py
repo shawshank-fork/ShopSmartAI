@@ -6,7 +6,7 @@ with open("requirements.txt") as f:
 setup(
     name="ShopSmart",
     version="0.1",
-    author="Sudhanshu",
+    author="Shashank Lakhaiayr",
     packages=find_packages(),
     install_requires = requirements,
 )
