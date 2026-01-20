@@ -25,4 +25,4 @@ class DataIngestor:
 
             self.vstore.add_documents(docs) #adding docs to vector store
             return self.vstore #Returning the vector store after adding documents
-        
+## langchain cant directly acces csv so we need to cnvert data into document
