@@ -127,6 +127,7 @@ body, html {
     background-color: #0056b3;
     color: #ffffff;
     margin-left: 10px;
+    white-space: pre-wrap;
 }
 
 .msg_cotainer_send {
@@ -170,3 +171,8 @@ body, html {
         width: 35px;
     }
 }
+
+/*“The frontend uses Bootstrap for layout and custom CSS for theming. 
+The chat interface is styled using flexbox
+and responsive media queries to ensure usability across screen sizes.”
+*/
