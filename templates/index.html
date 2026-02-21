@@ -27,7 +27,7 @@
 								</div>
 								<div class="user_info">
 									<span>ShopSmart AI Chatbot</span>
-									<p>Ask me anything!</p>
+									<p>Your personal Shopping Advisor.</p>
 								</div>
 							</div>
 						</div>
@@ -49,33 +49,197 @@
 		</div>
 		
 		<script>
-			$(document).ready(function() {
-				$("#messageArea").on("submit", function(event) {
-					const date = new Date();
-					const hour = date.getHours();
-					const minute = date.getMinutes();
-					const str_time = hour+":"+minute;
-					var rawText = $("#text").val();
+		$(document).ready(function() {
 
-					var userHtml = '<div class="d-flex justify-content-end mb-4"><div class="msg_cotainer_send">' + rawText + '<span class="msg_time_send">'+ str_time + '</span></div><div class="img_cont_msg"><img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg"></div></div>';
-					
-					$("#text").val("");
-					$("#messageFormeight").append(userHtml);
+			$("#messageArea").on("submit", function(event) {
+				event.preventDefault();
 
-					$.ajax({
-						data: {
-							msg: rawText,	
-						},
-						type: "POST",
-						url: "/get",
-					}).done(function(data) {
-						var botHtml = '<div class="d-flex justify-content-start mb-4"><div class="img_cont_msg"><img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" class="rounded-circle user_img_msg"></div><div class="msg_cotainer">' + data + '<span class="msg_time">' + str_time + '</span></div></div>';
-						$("#messageFormeight").append($.parseHTML(botHtml));
-					});
-					event.preventDefault();
+				const date = new Date();
+				const str_time = date.getHours() + ":" + date.getMinutes();
+
+				var rawText = $("#text").val();
+
+				// 🟢 USER MESSAGE
+				var userHtml = `
+					<div class="d-flex justify-content-end mb-4">
+						<div class="msg_cotainer_send">
+							${rawText}
+							<span class="msg_time_send">${str_time}</span>
+						</div>
+						<div class="img_cont_msg">
+							<img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" 
+								class="rounded-circle user_img_msg">
+						</div>
+					</div>`;
+
+				$("#text").val("");
+				$("#messageFormeight").append(userHtml);
+
+				// 🟡 TYPING INDICATOR
+				var typingHtml = `
+					<div id="typing" class="d-flex justify-content-start mb-4">
+						<div class="img_cont_msg">
+							<img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" 
+								class="rounded-circle user_img_msg">
+						</div>
+						<div class="msg_cotainer">
+							ShopSmart AI is Thinking...
+						</div>
+					</div>`;
+
+				$("#messageFormeight").append(typingHtml);
+				$("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+
+				// 🔵 AJAX CALL
+				$.ajax({
+					data: { msg: rawText },
+					type: "POST",
+					url: "/get",
+				})
+				.done(function(data) {
+
+					$("#typing").remove();
+
+					var botHtml = `
+						<div class="d-flex justify-content-start mb-4">
+							<div class="img_cont_msg">
+								<img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" 
+									class="rounded-circle user_img_msg">
+							</div>
+							<div class="msg_cotainer">
+								${data}
+								<span class="msg_time">${str_time}</span>
+							</div>
+						</div>`;
+
+					$("#messageFormeight").append(botHtml);
+					$("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+				})
+				.fail(function() {
+
+					$("#typing").remove();
+
+					var errorHtml = `
+						<div class="d-flex justify-content-start mb-4">
+							<div class="img_cont_msg">
+								<img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" 
+									class="rounded-circle user_img_msg">
+							</div>
+							<div class="msg_cotainer">
+								⚠️ Sorry, something went wrong. Please try again later.
+							</div>
+						</div>`;
+
+					$("#messageFormeight").append(errorHtml);
+					$("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
 				});
+
 			});
+
+		});
 		</script>
         
     </body>
 </html>
+
+
+<!--
+Frontend Enhancements Added to ShopSmart AI
+	1.Loading / Typing Animation
+	What Was Added
+
+	A temporary message bubble:
+
+	"ShopSmart AI is thinking..."
+
+	It appears immediately after the user sends a message.
+
+	It gets removed automatically when the real response arrives.
+
+	Why It Was Added
+
+	Improves user experience.
+
+	Prevents UI from feeling frozen.
+
+	Gives real-time conversational feel.
+
+	Makes chatbot behave like ChatGPT/WhatsApp.
+
+	Technical Implementation
+
+	Added a temporary <div id="typing">
+
+	Appended before AJAX call
+
+	Removed using $("#typing").remove() inside .done() and .fail()
+
+	2. Friendly API Failure Handling
+	 What Was Added
+
+	If API fails (LLM/AstraDB/server error), instead of crashing:
+
+	⚠️ Sorry, something went wrong. Please try again later.
+
+	is displayed inside chat bubble.
+
+	 Why It Was Added
+
+	Prevents blank screen or silent failure.
+
+	Makes system robust.
+
+	Improves reliability and professionalism.
+
+	 Technical Implementation
+
+	Added .fail() block in AJAX call
+
+	Added try-except block in Flask route (optional backend safety)
+
+	3️. Auto-Scroll Feature
+	   What Was Added
+
+	Chat window automatically scrolls to latest message.
+
+	 Why It Was Added
+
+	Ensures newest message is always visible.
+
+	Improves usability for longer conversations.
+
+	Technical Code Used
+	$("#messageFormeight").scrollTop(
+		$("#messageFormeight")[0].scrollHeight
+	);
+
+	4️. Structured Output Rendering (Earlier Fix)
+	 What Was Added
+	white-space: pre-wrap;
+
+	to .msg_cotainer
+
+	 Why It Was Added
+
+	Preserves line breaks from LLM output.
+
+	Ensures bullet points and formatting render correctly.
+
+	Improves readability.
+
+	 Overall Impact of These Improvements
+
+	These changes improved:
+
+	User Experience (UX)
+
+	Error Handling Robustness
+
+	Response Readability
+
+	Interaction Realism
+
+	Professional Look & Feel
+
+	The chatbot now behaves like a production-grade conversational AI system rather than a basic demo.
+-->
