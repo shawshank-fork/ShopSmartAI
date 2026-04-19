@@ -27,6 +27,8 @@ class DataIngestor:
             
             try:
                 logger.info("Fetching products from DummyJSON API....")
+                docs = APIDataConverter().convert()
+                logger.info(f"Fetched {len(docs)} products, ingesting into AstraDB")
             except Exception as e:
                 logger.warning(f"API fetch failed ({e}), falling back to CSV..")
                 from shopsmart.csv_fallback import CSVDataConverter
