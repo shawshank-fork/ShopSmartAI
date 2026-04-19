@@ -1,21 +1,82 @@
 ## langchain cant directly acces csv so we need to cnvert data into document
 
-import pandas as pd
+import requests
 from langchain_core.documents import Document
+from shopsmart.config import Config
 
-class DataConverter:
-    def __init__(self, file_path:str):
-        self.file_path = file_path
+class APIDataConverter:
+    
+    def __init__(self, categories=None):
+        self.base_url = Config.PRODUCT_API_BASE
+        self.categories = categories or Config.PRODUCT_CATEGORIES
 
-    def convert(self):
-        df = pd.read_csv(self.file_path)[["product_title", "price", "review"]]
+    def fetch_all_products(self):
+        all_products = []
+        limit = 30
+        skip = 0
 
-        docs = [
-            Document(
-                page_content=f"Product: {row['product_title']}\nPrice: Rs {row['price']}\nReview: {row['review']}", 
-                metadata={"product_name": row["product_title"], "price": row["price"]}
+        while True:
+            response = requests.get(
+                f"{self.base_url}/products",
+                params={"limit": limit, "skip": skip}
             )
-            for _, row in df.iterrows()
-        ]
+            response.raise_for_status()
+            data = response.json()
 
+            all_products.extend(data["products"])
+
+            if skip + limit >= data["total"]:
+                break
+            skip += limit
+
+        return all_products
+
+    def fetch_by_category(self,category_slug):
+        response = requests.get(f"{self.base_url}/products/category/{category_slug}")
+        response.raise_for_status()
+        return response.json()["products"]
+
+    def convert(self): # if categories are given then fetch by category else fetch all products
+        if self.categories:
+            products = []
+            for cat in self.categories:
+                products.extend(self.fetch_by_category(cat))
+
+        else:
+            products = self.fetch_all_products()
+
+        docs = [] #converting each prod into a langchain docu
+        for p in products:
+            reviews_text = "\n".join(
+                    f"  - {r['reviewerName']} ({r['rating']}/5): {r['comment']}"
+                    for r in p.get("reviews", [])
+            )
+
+            page_content = (
+                f"Product: {p['title']}\n"
+                f"Brand: {p.get('brand', 'N/A')}\n"
+                f"Category: {p['category']}\n"
+                f"Price: ${p['price']}\n"
+                f"Discount: {p.get('discountPercentage', 0)}%\n"
+                f"Rating: {p.get('rating', 'N/A')}/5\n"
+                f"Description: {p.get('description', '')}\n"
+                f"Availability: {p.get('availabilityStatus', 'Unknown')}\n"
+                f"Warranty: {p.get('warrantyInformation', 'N/A')}\n"
+                f"Shipping: {p.get('shippingInformation', 'N/A')}\n"
+                f"Reviews:\n{reviews_text}"
+            )
+
+            docs.append(Document(
+                    page_content=page_content,
+                    metadata={
+                        "product_name": p["title"],
+                        "price": p["price"],
+                        "category": p["category"],
+                        "brand": p.get("brand", ""),
+                        "rating": p.get("rating", 0),
+                        "thumbnail": p.get("thumbnail", "")
+                    }
+            ))
         return docs
+                            
+                
