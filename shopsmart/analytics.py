@@ -28,7 +28,7 @@ class AnalyticsTracker:
     def __init__(self):
         self.engine = create_engine(Config.ANALYTICS_DB_URL, echo=False)
         Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(blind=self.engine)
+        self.Session = sessionmaker(bind=self.engine)
         logger.info(f"Analytics DB intialized: {Config.ANALYTICS_DB_URL}")
 
     def log_interaction(self, session_id, user_query, bot_response, 
@@ -52,4 +52,22 @@ class AnalyticsTracker:
             session.commit()
             session.close()
             logger.info(f"Logged interaction: query='{user_query[:50]}...' time={response_time_ms:.0f}ms")
-        except Exception as e:    
+        except Exception as e:
+            logger.error(f"failed to log interaction: {e}")
+
+    def get_total_queries(self):
+        """Get tot la numebr of queries logged"""
+        session = self.Session()
+        count = session.query(Interaction).count()
+        session.close()          
+        return count
+
+    def get_recent_interactions(self, limit=20):
+        """Retunr most recent interactions"""
+        session = self.Session()
+        results = (session.query(Interaction)
+                    .order_by(Interaction.timestamp.desc())
+                    .limit(limit)
+                    .all())
+        session.close()
+        return results               
