@@ -4,9 +4,9 @@ langchain-astradb
 langchain-huggingface
 langchain-groq
 langchain-community
-datasets
-pypdf
 python-dotenv
 pandas
 flask
 prometheus_client
+requests
+sqlalchemy
