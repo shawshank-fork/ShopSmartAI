@@ -16,3 +16,7 @@ class CSVDataConverter:
             for _, row in df.iterrows()
         ]
         return docs    
+
+
+
+"""Why a separate fallback file? old DataConverter logic preserved as a safety net. If the DummyJSON API is ever down, app will till work. """        
