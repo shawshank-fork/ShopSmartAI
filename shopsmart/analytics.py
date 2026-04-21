@@ -27,7 +27,7 @@ class AnalyticsTracker:
 
     def __init__(self):
         self.engine = create_engine(Config.ANALYTICS_DB_URL, echo=False)
-        Base.metadata.create_all(self.engine)
+        Base.metadata.create_all(self.engine) #auto create the file and the interaction table on first launch.
         self.Session = sessionmaker(bind=self.engine)
         logger.info(f"Analytics DB intialized: {Config.ANALYTICS_DB_URL}")
 
