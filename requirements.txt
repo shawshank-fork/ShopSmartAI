@@ -10,3 +10,10 @@ flask
 prometheus_client
 requests
 sqlalchemy
+transformers
+torch
+ragas
+matplotlib
+scikit-learn
+seaborn
+notebook
