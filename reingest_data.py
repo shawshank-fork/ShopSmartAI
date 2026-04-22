@@ -18,3 +18,8 @@ print("Re-ingesting data from DummyJSON API...")
 vstore = ingestor.ingest(load_existing=False)
 
 print("Data re-ingestion complete!")
+
+"""What changed:
+Added logger import (consistent with other files now)
+Changed the print message from "Re-ingesting data with prices" to "from DummyJSON API" to reflect the new data source
+The core logic stays the same — it calls ingest(load_existing=False) which triggers the API fetch """
