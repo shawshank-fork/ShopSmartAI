@@ -2,6 +2,7 @@
 
 import requests
 from langchain_core.documents import Document
+from shopsmart.sentiment import SentimentAnalyzer
 from shopsmart.config import Config
 
 class APIDataConverter:
@@ -9,6 +10,7 @@ class APIDataConverter:
     def __init__(self, categories=None):
         self.base_url = Config.PRODUCT_API_BASE
         self.categories = categories or Config.PRODUCT_CATEGORIES
+        self.sentiment_analyzer = SentimentAnalyzer()
 
     def fetch_all_products(self):
         all_products = []
@@ -52,6 +54,9 @@ class APIDataConverter:
                     for r in p.get("reviews", [])
             )
 
+            #sentiment analysis on reviews
+            sentiment = self.sentiment_analyzer.analyze_reviews(p.get("reviews", []))
+
             page_content = (
                 f"Product: {p['title']}\n"
                 f"Brand: {p.get('brand', 'N/A')}\n"
@@ -63,8 +68,9 @@ class APIDataConverter:
                 f"Availability: {p.get('availabilityStatus', 'Unknown')}\n"
                 f"Warranty: {p.get('warrantyInformation', 'N/A')}\n"
                 f"Shipping: {p.get('shippingInformation', 'N/A')}\n"
+                f"Customer Sentiment: {sentiment['summary']} (Score: {sentiment['avg_score']})\n"
                 f"Reviews:\n{reviews_text}"
-            )
+            ) 
 
             docs.append(Document(
                     page_content=page_content,
@@ -74,9 +80,14 @@ class APIDataConverter:
                         "category": p["category"],
                         "brand": p.get("brand", ""),
                         "rating": p.get("rating", 0),
-                        "thumbnail": p.get("thumbnail", "")
+                        "thumbnail": p.get("thumbnail", ""),
+                        "sentiment_score": sentiment["avg_score"],
+                        "sentiment_summary": sentiment["summary"]
                     }
             ))
         return docs
-                            
-                
+
+#changes
+"""Line sentiment = self.sentiment.analyze_reviews(...) — runs DistilBERT on each product's reviews
+Line f"Customer Sentiment: ..." — adds sentiment to the document text so the LLM can see it
+sentiment_score + sentiment_summary added to metadata for analytics"""                                   
