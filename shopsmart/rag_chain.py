@@ -19,7 +19,7 @@ class RAGChainBuilder:
         return self.history_store[session_id]
     
     def build_chain(self):
-        retriever = self.vector_store.as_retriever(search_kwargs={"k":3})
+        retriever = self.vector_store.as_retriever(search_kwargs={"k":5})
 
         context_prompt = ChatPromptTemplate.from_messages([
             ("system", "Given the chat history and user question, rewrite it as a standalone question."),
@@ -37,8 +37,10 @@ class RAGChainBuilder:
         4. Add 2-3 key highlights as bullet points.
         5. Do NOT use markdown symbols like ** or *.
         6. Keep responses concise and professional.
-        7. Only use information from the provided context.
-        8. If insufficient context, ask for clarification.
+        7. ONLY use information from the provided CONTEXT below, Do NOT add any information that is not explicitly present in the context.
+        8. If the context does not contain enough information to answer, say "I don't have enough information about that. Could you ask about a specific product category?"
+        9. NEVER make up product names, prices, features, or reviews that are not in the context.
+        10. When mentioning prices, ratings, or sentiment, use the exact values from the context.
 
         FORMAT EXAMPLE:
 
@@ -49,7 +51,7 @@ class RAGChainBuilder:
         - Feature 1
         - Feature 2
         Why Recommended:
-        Short explanation.
+        Short explanation based on context only.
 
         CONTEXT:
         {context}
