@@ -22,5 +22,9 @@ product_env/
 Thumbs.db
 
 
+# Runtime artifacts
+logs/
+analytics.db
+
 #
 *.egg-info/
