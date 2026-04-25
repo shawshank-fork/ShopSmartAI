@@ -101,6 +101,50 @@ def create_app():
         all_ready = all(checks.values())
         return jsonify({"ready": all_ready, "checks": checks}), 200 if all_ready else 503
 
+    @app.route("/dashboard")
+    def dashboard():
+        """Show analytics dashboard"""
+
+        REQUEST_COUNT.inc()
+        return render_template("dashboard.html")
+
+    @app.route("/api/analytics")
+    def analytics_api():
+            """JSON API for dashboard charts."""
+            recent = tracker.get_recent_interactions(limit=50)
+            # Response time data
+            response_times = [r.response_time_ms for r in recent if r.response_time_ms]
+            # Queries per session
+            sessions = {}
+            for r in recent:
+                sessions[r.session_id] = sessions.get(r.session_id, 0) + 1
+            # Category breakdown
+            categories = {}
+            for r in recent:
+                cat = r.category_detected or "uncategorized"
+                categories[cat] = categories.get(cat, 0) + 1
+            # Hourly query distribution
+            hours = {}
+            for r in recent:
+                if r.timestamp:
+                    h = r.timestamp.strftime("%H:00")
+                    hours[h] = hours.get(h, 0) + 1
+            return jsonify({
+                "total_queries": tracker.get_total_queries(),
+                "avg_response_time": round(sum(response_times) / len(response_times), 2) if response_times else 0,
+                "response_times": response_times[-20:],
+                "categories": categories,
+                "hourly_distribution": hours,
+                "recent_queries": [
+                    {
+                        "query": r.user_query[:80],
+                        "response_time": r.response_time_ms,
+                        "timestamp": r.timestamp.isoformat() if r.timestamp else None
+                    }
+                    for r in recent[:10]
+                ]
+            })
+
     @app.route("/metrics")
     def metrics():
         return Response(generate_latest(), mimetype="text/plain")           
