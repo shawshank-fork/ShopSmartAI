@@ -64,11 +64,25 @@ def create_app():
             RESPONSE_LATENCY.observe(response_time_ms / 1000)
 
             # Log to analytics DB
+            category_keywords = {
+                "smartphone": "smartphones", "phone": "smartphones", "iphone": "smartphones",
+                "laptop": "laptops", "macbook": "laptops", "computer": "laptops",
+                "headphone": "headphones", "earbuds": "headphones", "earphone": "headphones",
+                "watch": "watches", "shoe": "shoes", "shirt": "clothing",
+                "kitchen": "kitchen", "furniture": "furniture", "beauty": "beauty",
+                "sunglasses": "sunglasses", "bat": "sports", "cricket": "sports",
+            }
+            detected_cat = None
+            for keyword, cat in category_keywords.items():
+                if keyword in user_input.lower():
+                    detected_cat = cat
+                    break
             tracker.log_interaction(
                 session_id="user_session",
                 user_query=user_input,
                 bot_response=response,
-                response_time_ms=response_time_ms
+                response_time_ms=response_time_ms,
+                category_detected=detected_cat
             )
 
             return response
