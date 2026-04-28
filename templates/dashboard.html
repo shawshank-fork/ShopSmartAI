@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopSmart AI - Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a3e, #2d1b69);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #6c63ff;
+        }
+
+        .header h1 {
+            color: #6c63ff;
+            font-size: 24px;
+        }
+
+        .header a {
+            color: #aaa;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .header a:hover {
+            color: #6c63ff;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 30px 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1a1a3e, #252560);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #333;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #6c63ff;
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: #888;
+            margin-top: 8px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 0 40px 30px;
+        }
+
+        .chart-card {
+            background: #1a1a3e;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+
+        .chart-card h3 {
+            color: #6c63ff;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .recent-table {
+            padding: 0 40px 40px;
+        }
+
+        .recent-table h3 {
+            color: #6c63ff;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1a1a3e;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        th {
+            background: #252560;
+            color: #6c63ff;
+        }
+
+        td {
+            color: #ccc;
+        }
+
+        .refresh-btn {
+            background: #6c63ff;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .refresh-btn:hover {
+            background: #5a52e0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>ShopSmart AI Analytics</h1>
+        <div>
+            <button class="refresh-btn" onclick="loadData()">Refresh</button>
+            <a href="/">Back to Chat</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="value" id="totalQueries">-</div>
+            <div class="label">Total Queries</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="avgResponseTime">-</div>
+            <div class="label">Avg Response Time (ms)</div>
+        </div>
+        <div class="stat-card">
+            <div class="value" id="totalCategories">-</div>
+            <div class="label">Categories Queried</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Response Time Trend</h3>
+            <canvas id="responseTimeChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Category Breakdown</h3>
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+
+    <div class="recent-table">
+        <h3>Recent Queries</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Response Time</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="recentQueries"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let responseTimeChart, categoryChart;
+
+        async function loadData() {
+            const res = await fetch('/api/analytics');
+            const data = await res.json();
+
+            // Update stats
+            document.getElementById('totalQueries').textContent = data.total_queries;
+            document.getElementById('avgResponseTime').textContent = data.avg_response_time;
+            document.getElementById('totalCategories').textContent = Object.keys(data.categories).length;
+
+            // Response time chart
+            if (responseTimeChart) responseTimeChart.destroy();
+            responseTimeChart = new Chart(document.getElementById('responseTimeChart'), {
+                type: 'line',
+                data: {
+                    labels: data.response_times.map((_, i) => i + 1),
+                    datasets: [{
+                        label: 'Response Time (ms)',
+                        data: data.response_times,
+                        borderColor: '#6c63ff',
+                        backgroundColor: 'rgba(108, 99, 255, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    plugins: { legend: { labels: { color: '#ccc' } } },
+                    scales: {
+                        x: { ticks: { color: '#888' }, grid: { color: '#333' } },
+                        y: { ticks: { color: '#888' }, grid: { color: '#333' } }
+                    }
+                }
+            });
+
+            // Category chart
+            if (categoryChart) categoryChart.destroy();
+            const catLabels = Object.keys(data.categories);
+            const catValues = Object.values(data.categories);
+            categoryChart = new Chart(document.getElementById('categoryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catValues,
+                        backgroundColor: ['#6c63ff', '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#ff6384']
+                    }]
+                },
+                options: {
+                    plugins: { legend: { labels: { color: '#ccc' } } }
+                }
+            });
+
+            // Recent queries table
+            const tbody = document.getElementById('recentQueries');
+            tbody.innerHTML = data.recent_queries.map(q => `
+                <tr>
+                    <td>${q.query}</td>
+                    <td>${q.response_time ? q.response_time.toFixed(0) + ' ms' : '-'}</td>
+                    <td>${q.timestamp ? new Date(q.timestamp).toLocaleString() : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
+</body>
+
+</html>
