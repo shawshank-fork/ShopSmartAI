@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+__pycache__
+*.pyc
+*.pyo
+logs/
+analytics.db
+notebooks/
+Evaluation/
+*.egg-info/
+.dockerignore
+docker-compose.yml
+README.md

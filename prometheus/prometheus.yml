@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "shopsmart-ai"
+    static_configs:
+      - targets: ["shopsmart-ai:5000"]
+    metrics_path: "/metrics"
