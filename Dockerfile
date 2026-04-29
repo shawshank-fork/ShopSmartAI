@@ -14,11 +14,19 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-## Copying ur all contents from local to app
+## Copy requirements first(for layer caching optimization)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+## Copy the rest of the app
 COPY . .
 
-## Run setup.py
+## Install the package
 RUN pip install --no-cache-dir -e .
+
+## Health Check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
 
 # Used PORTS
 EXPOSE 5000
