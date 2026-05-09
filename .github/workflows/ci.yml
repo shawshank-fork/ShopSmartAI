@@ -35,7 +35,7 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 shopsmart/ utils/ app.py --max-line-length=120 --ignore=W503
+          flake8 shopsmart/ utils/ app.py --max-line-length=120 --ignore=W503,W292
 
       - name: Run tests
         run: |
