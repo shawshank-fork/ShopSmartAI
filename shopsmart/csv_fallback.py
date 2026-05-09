@@ -1,8 +1,9 @@
 import pandas as pd
 from langchain_core.documents import Document
 
+
 class CSVDataConverter:
-    def __init__(self,file_path: str):
+    def __init__(self, file_path: str):
         self.file_path = file_path
 
     def convert(self):
@@ -10,13 +11,18 @@ class CSVDataConverter:
 
         docs = [
             Document(
-                page_content=f"Product: {row['product_title']}\nPrice: Rs {row['price']}\nReview: {row['review']}",
+                page_content=(
+                    f"Product: {row['product_title']}\n"
+                    f"Price: Rs {row['price']}\n"
+                    f"Review: {row['review']}"
+                ),
                 metadata={"product_name": row["product_title"], "price": row["price"]}
             )
             for _, row in df.iterrows()
         ]
-        return docs    
+        return docs
 
 
-
-"""Why a separate fallback file? old DataConverter logic preserved as a safety net. If the DummyJSON API is ever down, app will till work. """        
+# Why a separate fallback file?
+# Old DataConverter logic preserved as a safety net.
+# If the DummyJSON API is ever down, app will still work.
