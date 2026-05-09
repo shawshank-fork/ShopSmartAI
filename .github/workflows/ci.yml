@@ -31,18 +31,15 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
+          pip install pytest flake8
 
       - name: Lint with flake8
         run: |
-          pip install flake8
-          flake8 shopsmart/ utils/ app.py --max-line-length=120 --ignore=E501,W503
+          flake8 shopsmart/ utils/ app.py --max-line-length=120 --ignore=W503
 
-      - name: Check imports
+      - name: Run tests
         run: |
-          python -c "from shopsmart.config import Config; print('Config OK')"
-          python -c "from shopsmart.analytics import AnalyticsTracker; print('Analytics OK')"
-          python -c "from shopsmart.sentiment import SentimentAnalyzer; print('Sentiment OK')"
-          python -c "from utils.logger import get_logger; print('Logger OK')"
+          pytest tests/ -v --tb=short
 
   docker-build:
     runs-on: ubuntu-latest
