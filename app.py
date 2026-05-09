@@ -1,7 +1,6 @@
-
 import time
 from flask import render_template, Flask, request, Response, jsonify
-from prometheus_client import Counter, Histogram, Gauge, generate_latest
+from prometheus_client import Counter, Histogram, generate_latest
 
 from shopsmart.data_ingestion import DataIngestor
 from shopsmart.rag_chain import RAGChainBuilder
@@ -13,7 +12,7 @@ load_dotenv()
 
 logger = get_logger(__name__)
 
-#Prometheus metrics
+# Prometheus metrics
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP Request")
 PREDICTION_COUNT = Counter(
     "rag_prediction_total",
@@ -30,11 +29,12 @@ ERROR_COUNT = Counter(
     ["error_type"]
 )
 
+
 def create_app():
 
     app = Flask(__name__)
 
-    #initialize components
+    # Initialize components
     vector_store = DataIngestor().ingest(load_existing=True)
     rag_chain = RAGChainBuilder(vector_store).build_chain()
     tracker = AnalyticsTracker()
@@ -45,7 +45,7 @@ def create_app():
     def index():
         REQUEST_COUNT.inc()
         return render_template("index.html")
-    
+
     @app.route("/get", methods=["POST"])
     def get_response():
 
@@ -54,8 +54,8 @@ def create_app():
 
         try:
             response = rag_chain.invoke(
-                {"input" : user_input},
-                config={"configurable" : {"session_id" : "user_session"}} 
+                {"input": user_input},
+                config={"configurable": {"session_id": "user_session"}}
             )["answer"]
 
             response_time_ms = (time.time() - start_time) * 1000
@@ -92,7 +92,6 @@ def create_app():
             logger.error(f"Error processing query: {e}")
             return "Sorry, something went wrong. Please try again.", 500
 
-    
     @app.route("/health")
     def health():
         return jsonify({"status": "healthy", "service": "shopsmart-ai"})
@@ -118,53 +117,55 @@ def create_app():
     @app.route("/dashboard")
     def dashboard():
         """Show analytics dashboard"""
-
         REQUEST_COUNT.inc()
         return render_template("dashboard.html")
 
     @app.route("/api/analytics")
     def analytics_api():
-            """JSON API for dashboard charts."""
-            recent = tracker.get_recent_interactions(limit=50)
-            # Response time data
-            response_times = [r.response_time_ms for r in recent if r.response_time_ms]
-            # Queries per session
-            sessions = {}
-            for r in recent:
-                sessions[r.session_id] = sessions.get(r.session_id, 0) + 1
-            # Category breakdown
-            categories = {}
-            for r in recent:
-                cat = r.category_detected or "uncategorized"
-                categories[cat] = categories.get(cat, 0) + 1
-            # Hourly query distribution
-            hours = {}
-            for r in recent:
-                if r.timestamp:
-                    h = r.timestamp.strftime("%H:00")
-                    hours[h] = hours.get(h, 0) + 1
-            return jsonify({
-                "total_queries": tracker.get_total_queries(),
-                "avg_response_time": round(sum(response_times) / len(response_times), 2) if response_times else 0,
-                "response_times": response_times[-20:],
-                "categories": categories,
-                "hourly_distribution": hours,
-                "recent_queries": [
-                    {
-                        "query": r.user_query[:80],
-                        "response_time": r.response_time_ms,
-                        "timestamp": r.timestamp.isoformat() if r.timestamp else None
-                    }
-                    for r in recent[:10]
-                ]
-            })
+        """JSON API for dashboard charts."""
+        recent = tracker.get_recent_interactions(limit=50)
+        # Response time data
+        response_times = [r.response_time_ms for r in recent if r.response_time_ms]
+        # Queries per session
+        sessions = {}
+        for r in recent:
+            sessions[r.session_id] = sessions.get(r.session_id, 0) + 1
+        # Category breakdown
+        categories = {}
+        for r in recent:
+            cat = r.category_detected or "uncategorized"
+            categories[cat] = categories.get(cat, 0) + 1
+        # Hourly query distribution
+        hours = {}
+        for r in recent:
+            if r.timestamp:
+                h = r.timestamp.strftime("%H:00")
+                hours[h] = hours.get(h, 0) + 1
+        return jsonify({
+            "total_queries": tracker.get_total_queries(),
+            "avg_response_time": round(
+                sum(response_times) / len(response_times), 2
+            ) if response_times else 0,
+            "response_times": response_times[-20:],
+            "categories": categories,
+            "hourly_distribution": hours,
+            "recent_queries": [
+                {
+                    "query": r.user_query[:80],
+                    "response_time": r.response_time_ms,
+                    "timestamp": r.timestamp.isoformat() if r.timestamp else None
+                }
+                for r in recent[:10]
+            ]
+        })
 
     @app.route("/metrics")
     def metrics():
-        return Response(generate_latest(), mimetype="text/plain")           
+        return Response(generate_latest(), mimetype="text/plain")
 
     return app
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5000,debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
